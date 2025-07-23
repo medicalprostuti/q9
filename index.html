@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "চার্জের SI একক কত?",
+          options: {
+            a: "ভোল্ট",
+            b: "ফ্যারাড",
+            c: "ওহম",
+            d: "কুলম্ব",
+          },
+          correct: "d",
+          explanation:
+            "<p>চার্জের SI একক হলো কুলম্ব (Coulomb), যা ফরাসি বিজ্ঞানী চার্লস-অগাস্টিন দে কুলম্বের নামে নামকরণ করা হয়েছে। এক কুলম্ব চার্জ হলো প্রতি সেকেন্ডে এক অ্যাম্পিয়ার বিদ্যুৎপ্রবাহের মাধ্যমে প্রবাহিত চার্জের পরিমাণ।</p>",
+        },
+        {
+          id: 2,
+          question: "দুটি সমান্তরাল তার দিয়ে একই দিকে বিদ্যুৎ প্রবাহিত হলে -",
+          options: {
+            a: "একে অপরকে আকর্ষণ করে",
+            b: "কোনো বল কাজ করে না",
+            c: "বিকর্ষণ করে",
+            d: "বিপরীতমুখী হয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>দুটি সমান্তরাল তার দিয়ে যখন একই দিকে বিদ্যুৎ প্রবাহিত হয়, তখন তার দুটি একে অপরকে আকর্ষণ করে। এর কারণ হলো, প্রতিটি তারের চারপাশে একটি চৌম্বক ক্ষেত্র তৈরি হয় এবং এই চৌম্বক ক্ষেত্র একে অপরের উপর বল প্রয়োগ করে। ফ্লেমিং-এর বাম হস্ত নিয়ম অনুযায়ী, একই দিকে প্রবাহ হলে তাদের মধ্যে আকর্ষণ বল ক্রিয়া করে।</p>",
+        },
+        {
+          id: 3,
+          question: "কুলম্বের সূত্রানুসারে কোনটি সম্ভব নয়?",
+          options: {
+            a: "গুণফলের সমানুপাতিক",
+            b: "দূরত্বের বর্গের ব্যস্তানুপাতিক",
+            c: "সরলরেখা বরাবর ক্রিয়া",
+            d: "দূরত্বের বর্গের অর্ধেকের ব্যস্তানুপাতিক",
+          },
+          correct: "d",
+          explanation:
+            "<p>কুলম্বের সূত্রানুযায়ী, দুটি বিন্দু চার্জের মধ্যে ক্রিয়াশীল আকর্ষণ বা বিকর্ষণ বল চার্জদ্বয়ের গুণফলের সমানুপাতিক, তাদের মধ্যবর্তী দূরত্বের বর্গের ব্যস্তানুপাতিক এবং চার্জদ্বয়ের সংযোজক সরলরেখা বরাবর ক্রিয়া করে। সুতরাং, 'দূরত্বের বর্গের অর্ধেকের ব্যস্তানুপাতিক' কথাটি কুলম্বের সূত্রের সাথে সামঞ্জস্যপূর্ণ নয়।</p>",
+        },
+        {
+          id: 4,
+          question: "গ্রাম এককে একটি ইলেকট্রনের ভর কত?",
+          options: {
+            a: "2.6 x 10⁻¹⁹",
+            b: "9.1 x 10⁻³¹",
+            c: "9.1 x 10⁻¹⁹",
+            d: "9.1 x 10⁻²⁸",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি ইলেকট্রনের ভর SI এককে 9.109 × 10<sup>-31</sup> kg। আমরা জানি, 1 kg = 1000 g। সুতরাং, গ্রামে ইলেকট্রনের ভর হবে 9.109 × 10<sup>-31</sup> kg × 1000 g/kg = 9.109 × 10<sup>-28</sup> g।</p>",
+        },
+        {
+          id: 5,
+          question: "কুলম্বের সূত্রের ভেক্টররূপ-",
+          options: {
+            a: "F = 1/(4πε₀) (q₁q₂/r²)",
+            b: "F = 1/(4πε₀) (q₁q₂/r³)",
+            c: "F = 1/(4πε₀) (q₁q₂/r)",
+            d: "F = 1/(4πε₀) (q₁q₂/r⁴)",
+          },
+          correct: "a",
+          explanation:
+            "<p>কুলম্বের সূত্রের ভেক্টররূপ হলো F = 1/(4πε₀) (q₁q₂/r²) r̂, যেখানে r̂ হলো r অভিমুখে একক ভেক্টর। তবে সাধারণ ভাবে, এই একক ভেক্টরকে দূরত্বের ঘনফলের সাথে যুক্ত করে F = 1/(4πε₀) (q₁q₂/r³)<b>r</b> লেখা হয়। প্রশ্নটিতে r² এর সাথে একক ভেক্টর r̂ অনুপস্থিত থাকায়, সহজতম প্রকাশটিই এখানে সবচেয়ে উপযুক্ত। (a) অপশনটি ভেক্টররূপের প্রচলিত একটি সংক্ষিপ্ত প্রকাশ, যেখানে একক ভেক্টরটি অন্তর্নিহিত থাকে বা r² এর সাথে r̂ গুণ করে r³ ও <b>r</b> হিসেবে প্রকাশ করা হয়। প্রদত্ত অপশনগুলোর মধ্যে এটিই সবচেয়ে সঠিক রূপ।</p>",
+        },
+        {
+          id: 6,
+          question: "কুলম্বের সূত্রে সমানুপাতিক ধ্রুবকের মান কত?",
+          options: {
+            a: "1C",
+            b: "9 x 10⁹ Nm²C⁻²",
+            c: "8.854 x 10⁻¹² C²N⁻¹m⁻²",
+            d: "2 x 10⁻⁷ N",
+          },
+          correct: "b",
+          explanation:
+            "<p>কুলম্বের সূত্র F = k (q₁q₂/r²) তে, k হলো সমানুপাতিক ধ্রুবক। শূন্য মাধ্যমে এই ধ্রুবকের মান k = 1/(4πε₀) এবং এর আনুমানিক মান 9 × 10<sup>9</sup> Nm²C<sup>-2</sup>। বিকল্প (c) হলো শূন্য মাধ্যমের তড়িৎ ভেদনযোগ্যতা (ε₀) এর মান।</p>",
+        },
+        {
+          id: 7,
+          question: "দুটি সমান চার্জের দূরত্ব অর্ধেক ও মান অর্ধেক হলে বল-",
+          options: {
+            a: "অর্ধেক",
+            b: "দ্বিগুণ",
+            c: "অপরিবর্তিত",
+            d: "চারগুণ",
+          },
+          correct: "c",
+          explanation:
+            "<p>কুলম্বের সূত্রানুযায়ী, বল F = k (q₁q₂/r²)।</p><p>প্রাথমিক অবস্থায়, F = k (q² / r²)।</p><p>নতুন অবস্থায়, চার্জের মান অর্ধেক হলে q' = q/2 এবং দূরত্ব অর্ধেক হলে r' = r/2।</p><p>নতুন বল F' = k ( (q/2)² / (r/2)² ) = k ( q²/4 / r²/4 ) = k (q² / r²)।</p><p>দেখা যাচ্ছে, F' = F। সুতরাং, বল অপরিবর্তিত থাকবে।</p>",
+        },
+        {
+          id: 8,
+          question: "সবচেয়ে বেশি আধান থাকে-",
+          options: {
+            a: "কেন্দ্রে",
+            b: "অবতল তলে",
+            c: "সমতল তলে",
+            d: "উত্তল তলে",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি পরিবাহী বস্তুতে আধানগুলো পৃষ্ঠে ছড়িয়ে থাকে এবং পৃষ্ঠের বক্রতার উপর তাদের ঘনত্ব নির্ভর করে। যে অংশে বক্রতা বেশি (যেমন তীক্ষ্ণ কোণা বা উত্তল তল), সেখানে আধানের ঘনত্ব বেশি হয়। তাই, সবচেয়ে বেশি আধান উত্তল তলে বা তীক্ষ্ণ কোণায় কেন্দ্রীভূত থাকে।</p>",
+        },
+        {
+          id: 9,
+          question: "আকর্ষণ বল নিচের কোনটির উপর নির্ভর করে না?",
+          options: {
+            a: "চার্জের পরিমাণ",
+            b: "দূরত্ব",
+            c: "মাধ্যম",
+            d: "ভর",
+          },
+          correct: "d",
+          explanation:
+            "<p>কুলম্বের সূত্রানুযায়ী, দুটি চার্জের মধ্যে ক্রিয়াশীল আকর্ষণ বা বিকর্ষণ বল চার্জের পরিমাণ (q₁ ও q₂), তাদের মধ্যবর্তী দূরত্ব (r) এবং মাধ্যম (ε) এর উপর নির্ভর করে। কিন্তু এই বল চার্জিত বস্তুর ভরের উপর সরাসরি নির্ভর করে না, যদিও ভরের সাথে মহাকর্ষ বল জড়িত।</p>",
+        },
+        {
+          id: 10,
+          question: "কুলম্বের সূত্র কোনটির ক্ষেত্রে প্রযোজ্য?",
+          options: {
+            a: "বৃহৎ চার্জ",
+            b: "ক্ষুদ্র চার্জ",
+            c: "বিন্দু চার্জ",
+            d: "যেকোনো চার্জ",
+          },
+          correct: "c",
+          explanation:
+            "<p>কুলম্বের সূত্র শুধুমাত্র বিন্দু চার্জের (Point charges) ক্ষেত্রে প্রযোজ্য। এর কারণ হলো, বিন্দু চার্জের ক্ষেত্রে চার্জের বিতরণকে একটি নির্দিষ্ট বিন্দুতে কেন্দ্রীভূত বলে ধরা হয়, যার ফলে দূরত্ব পরিমাপ করা সহজ হয়। বৃহৎ আকারের বা অবিচ্ছিন্নভাবে বিস্তৃত চার্জের ক্ষেত্রে কুলম্বের সূত্রের সরাসরি প্রয়োগ সম্ভব নয়, তখন ইন্টিগ্রেশনের মাধ্যমে হিসাব করতে হয়।</p>",
+        },
+        {
+          id: 11,
+          question: "তড়িৎ ভেদনযোগ্যতার একক কোনটি?",
+          options: {
+            a: "C²N⁻¹m⁻²",
+            b: "Nm²C⁻²",
+            c: "C²N⁻²m⁻¹",
+            d: "Nm⁻²C⁻²",
+          },
+          correct: "a",
+          explanation:
+            "<p>কুলম্বের সূত্র F = 1/(4πε) (q₁q₂/r²) থেকে আমরা তড়িৎ ভেদনযোগ্যতা (ε) এর একক বের করতে পারি। ε = (1/4πF) (q₁q₂/r²)। সুতরাং, এককের দিক থেকে ε এর একক হবে C² / (N m²) = C²N<sup>-1</sup>m<sup>-2</sup>।</p>",
+        },
+        {
+          id: 12,
+          question: "পরাবৈদ্যুতিক ধ্রুবকের একক কোনটি?",
+          options: {
+            a: "C²N⁻²m⁻¹",
+            b: "C²N⁻¹m⁻¹",
+            c: "C²N⁻¹m⁻²",
+            d: "এককবিহীন",
+          },
+          correct: "d",
+          explanation:
+            "<p>পরাবৈদ্যুতিক ধ্রুবক (Dielectric constant), যা আপেক্ষিক তড়িৎ ভেদনযোগ্যতা (ε<sub>r</sub>) নামেও পরিচিত, হলো কোনো মাধ্যমের তড়িৎ ভেদনযোগ্যতা (ε) এবং শূন্য মাধ্যমের তড়িৎ ভেদনযোগ্যতা (ε₀) এর অনুপাত: ε<sub>r</sub> = ε/ε₀। যেহেতু এটি দুটি একই রাশির অনুপাত, তাই পরাবৈদ্যুতিক ধ্রুবকের কোনো একক নেই, এটি একটি এককবিহীন রাশি।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "চার্জের কোয়ান্টাম অনুসারে কোন চার্জ সম্ভব? [ইলেকট্রনের চার্জ 1.6 x 10⁻¹⁹ C]",
+          options: {
+            a: "3.2 x 10⁻¹⁹ C",
+            b: "4.6 x 10⁻¹⁹ C",
+            c: "6.2 x 10⁻¹⁹ C",
+            d: "9.4 x 10⁻¹⁹ C",
+          },
+          correct: "a",
+          explanation:
+            "<p>চার্জের কোয়ান্টায়ন নীতি অনুসারে, কোনো বস্তুর মোট চার্জ সর্বদা ইলেকট্রনের চার্জের (e = 1.6 × 10<sup>-19</sup> C) পূর্ণ গুণিতক হয়। অর্থাৎ, Q = ne, যেখানে n একটি পূর্ণসংখ্যা (1, 2, 3, ...)।</p><ul><li>(a) 3.2 × 10<sup>-19</sup> C = 2 × (1.6 × 10<sup>-19</sup> C)  (এখানে n=2, যা সম্ভব)</li><li>(b) 4.6 × 10<sup>-19</sup> C = 2.875 × (1.6 × 10<sup>-19</sup> C) (এখানে n=2.875, যা পূর্ণসংখ্যা নয়)</li><li>(c) 6.2 × 10<sup>-19</sup> C = 3.875 × (1.6 × 10<sup>-19</sup> C) (এখানে n=3.875, যা পূর্ণসংখ্যা নয়)</li><li>(d) 9.4 × 10<sup>-19</sup> C = 5.875 × (1.6 × 10<sup>-19</sup> C) (এখানে n=5.875, যা পূর্ণসংখ্যা নয়)</li></ul><p>সুতরাং, 3.2 × 10<sup>-19</sup> C চার্জটি সম্ভব।</p>",
+        },
+        {
+          id: 14,
+          question: "গ্লাস রড সিল্কে ঘষলে কী চার্জ হবে?",
+          options: {
+            a: "ঋণাত্মক",
+            b: "ধনাত্মক",
+            c: "উভয়ই",
+            d: "কোনোটিই নয়",
+          },
+          correct: "b",
+          explanation:
+            "<p>গ্লাস রডকে সিল্কে ঘষলে গ্লাস রড থেকে ইলেকট্রন সিল্কে স্থানান্তরিত হয়। ইলেকট্রন হারানোর কারণে গ্লাস রড ধনাত্মক চার্জে চার্জিত হয় এবং সিল্ক ইলেকট্রন গ্রহণ করায় ঋণাত্মক চার্জে চার্জিত হয়।</p>",
+        },
+        {
+          id: 15,
+          question: "চার্জিত বস্তু অগ্নিশিখায় অচার্জিত হয় কেন?",
+          options: {
+            a: "গ্যাস আয়নিত হয়",
+            b: "বস্তু পরিবাহী হয়",
+            c: "গ্যাস আঘাত করে",
+            d: "বিপরীত চার্জিত হয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>অগ্নিশিখা উচ্চ তাপমাত্রার কারণে গ্যাসকে আয়নিত করে। এই আয়নিত গ্যাস কণাগুলো (ধনাত্মক আয়ন ও ইলেকট্রন) অত্যন্ত গতিশীল হয়। যখন একটি চার্জিত বস্তুকে অগ্নিশিখায় ধরা হয়, তখন আয়নিত কণাগুলো বস্তুর চার্জকে প্রশমিত করে দেয়, যার ফলে বস্তুটি অচার্জিত হয়ে যায়।</p>",
+        },
+        {
+          id: 16,
+          question: "প্রোটনের চার্জ কত?",
+          options: {
+            a: "1.6 x 10⁻¹⁹ C",
+            b: "1.67 x 10⁻²⁷ C",
+            c: "1.6 x 10⁻²³ C",
+            d: "1.67 x 10⁻²³ C",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রোটনের চার্জের মান ইলেকট্রনের চার্জের মানের সমান, তবে এটি ধনাত্মক। এর মান 1.602 × 10<sup>-19</sup> কুলম্ব (C)। বিকল্প (b) প্রোটনের ভরের কাছাকাছি।</p>",
+        },
+        {
+          id: 17,
+          question: "কাচের দণ্ড সিল্কে ঘষলে কেন চার্জিত হয়?",
+          options: {
+            a: "ইলেকট্রন গ্রহণ",
+            b: "প্রোটন গ্রহণ",
+            c: "ইলেকট্রন হারায়",
+            d: "প্রোটন গ্রহণ ও ইলেকট্রন হারায়",
+          },
+          correct: "c",
+          explanation:
+            "<p>ঘর্ষণের ফলে চার্জিত হওয়ার প্রক্রিয়াকে ট্রাইবোইলেক্ট্রিক প্রভাব বলে। যখন কাচের দণ্ডকে সিল্কে ঘষা হয়, তখন কাচ ইলেকট্রন ত্যাগ করে এবং সিল্ক ইলেকট্রন গ্রহণ করে। ইলেকট্রন হারানোর কারণে কাচের দণ্ড ধনাত্মক চার্জে চার্জিত হয়।</p>",
+        },
+        {
+          id: 18,
+          question: "পিথ বল ও রাবার রড বিকর্ষণ করলে চার্জ কী?",
+          options: {
+            a: "শুধু পিথ বল চার্জিত",
+            b: "শুধু রড চার্জিত",
+            c: "পিথ বল বা রড চার্জিত",
+            d: "উভয়ই সমধর্মী",
+          },
+          correct: "d",
+          explanation:
+            "<p>দুটি বস্তুর মধ্যে বিকর্ষণ তখনই ঘটে যখন তারা সমধর্মী চার্জে চার্জিত থাকে। অর্থাৎ, যদি পিথ বল এবং রাবার রড বিকর্ষণ করে, তবে হয় উভয়ই ধনাত্মক চার্জে চার্জিত অথবা উভয়ই ঋণাত্মক চার্জে চার্জিত। এই ক্ষেত্রে, শুধুমাত্র একটি চার্জিত হলে বিকর্ষণ সম্ভব নয়।</p>",
+        },
+        {
+          id: 19,
+          question: "ধনাত্মক চার্জিত বস্তু নিরপেক্ষ হয় কীভাবে?",
+          options: {
+            a: "ইলেকট্রন চলে যায়",
+            b: "ইলেকট্রন প্রবাহিত হয়",
+            c: "প্রোটন চলে যায়",
+            d: "প্রোটন প্রবাহিত হয়",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি ধনাত্মক চার্জিত বস্তুতে ইলেকট্রনের অভাব থাকে। যখন এই বস্তুকে নিরপেক্ষ করতে হয়, তখন বাইরে থেকে ইলেকট্রন এতে প্রবাহিত হয় এবং এর ইলেকট্রনের ঘাটতি পূরণ করে। প্রোটন সাধারণত পরমাণুর নিউক্লিয়াসে দৃঢ়ভাবে আবদ্ধ থাকে এবং সহজেই চলাচল করতে পারে না।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                    <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                    </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
